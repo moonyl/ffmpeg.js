@@ -6,7 +6,7 @@
 </head>
 <body>
   <script>
-
+var ws = null;
 function startDecode() {
     Module.ccall('avcodec_register_all');
 
@@ -50,7 +50,9 @@ function startDecode() {
 
     // connect to WS H264 stream
     var url = document.getElementById('url').value;
-    var ws = new WebSocket(url);
+    if (ws != null)
+       ws.close();
+    ws = new WebSocket(url);
     ws.binaryType = 'arraybuffer';
     
     // on receiving data. The buffer has to be a COMPLETE NAL UNIT, otherwise the buffer could not be decoded
@@ -186,6 +188,7 @@ function startDecode() {
 
   Video Source: <select id="url" size="1">
      <option value="ws://localhost:8181/sensorhub/sos?service=SOS&version=2.0&request=GetResult&offering=urn:mysos:solo:video&observedProperty=http://sensorml.com/ont/swe/property/VideoFrame&temporalFilter=phenTime,2015-12-19T20:29:17.660Z/2015-12-19T20:31:07.541Z&replaySpeed=1">Solo-GoPro@localhost</option>
+     <option value="ws://localhost:8181/sensorhub/sos?service=SOS&version=2.0&request=GetResult&offering=urn:mysos:solo:video&observedProperty=http://sensorml.com/ont/swe/property/VideoFrame&temporalFilter=phenTime,2015-12-19T20:29:17.660Z/2015-12-19T20:31:07.541Z&replaySpeed=2">Solo-GoPro@localhost x2</option>
      <option value="ws://bottsgeo.simple-url.com:8181/sensorhub/sos?service=SOS&version=2.0&request=GetResult&offering=urn:osh:dahua1&observedProperty=http://sensorml.com/ont/swe/property/VideoFrame&temporalFilter=phenTime,now/2080-01-01">Dahua@botts-house</option>
      <option value="ws://bottsgeo.simple-url.com:8181/sensorhub/sos?service=SOS&version=2.0&request=GetResult&offering=urn:osh:virb1&observedProperty=http://sensorml.com/ont/swe/property/VideoFrame&temporalFilter=phenTime,now/2080-01-01">Virb@botts-house</option>
   </select> 
