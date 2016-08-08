@@ -68,7 +68,7 @@ clean-x264:
 clean-ffmpeg-webm:
 	-cd build/ffmpeg-webm && rm -f ffmpeg.bc && make clean
 clean-ffmpeg-mp4:
-	-cd build/ffmpeg-mp4 && rm -f ffmpeg.bc && make clean
+	-cd build/ffmpeg-mp4 && rm -f ffmpeg*.bc && make clean
 
 build/opus/configure:
 	cd build/opus && ./autogen.sh
@@ -258,6 +258,47 @@ FFMPEG_COMMON_ARGS = \
 	--disable-xlib \
 	--disable-zlib
 
+FFMPEG_H264_ARGS = \
+	--cc=emcc \
+	--enable-cross-compile \
+	--target-os=none \
+	--arch=x86 \
+        --disable-runtime-cpudetect \
+	--disable-asm \
+	--disable-fast-unaligned \
+	--disable-pthreads \
+	--disable-w32threads \
+	--disable-os2threads \
+	--disable-debug \
+	--disable-stripping \
+        \
+        --disable-bzlib \
+	--disable-iconv \
+	--disable-libxcb \
+	--disable-lzma \
+	--disable-sdl \
+	--disable-securetransport \
+	--disable-xlib \
+	--disable-zlib \
+        --disable-network \
+	--disable-d3d11va \
+	--disable-dxva2 \
+	--disable-vaapi \
+	--disable-vda \
+	--disable-vdpau \
+	\
+        --disable-all \
+        --disable-everything \
+        --enable-ffmpeg \
+        --enable-avcodec \
+	--enable-avformat \
+	--enable-avutil \
+	--enable-swresample \
+	--enable-swscale \
+	--enable-avfilter \
+        --enable-decoder=h264 \
+        --enable-shared
+
 build/ffmpeg-webm/ffmpeg.bc: $(WEBM_SHARED_DEPS)
 	cd build/ffmpeg-webm && \
 	git reset --hard && \
@@ -294,16 +335,19 @@ build/ffmpeg-mp4/ffmpeg.bc: $(MP4_SHARED_DEPS)
 	emmake make -j8 && \
 	cp ffmpeg ffmpeg.bc
 
+build/ffmpeg-mp4/ffmpeg-h264.bc:
+	cd build/ffmpeg-mp4 && \
+	emconfigure ./configure $(FFMPEG_H264_ARGS) && \
+	emmake make -j8 && \
+        cp ffmpeg ffmpeg-h264.bc
+
 # Compile bitcode to JavaScript.
 # NOTE(Kagami): Bump heap size to 64M, default 16M is not enough even
 # for simple tests and 32M tends to run slower than 64M.
 EMCC_COMMON_ARGS = \
-	--closure 1 \
-	-s NODE_STDOUT_FLUSH_WORKAROUND=0 \
 	-s TOTAL_MEMORY=67108864 \
 	-s OUTLINING_LIMIT=20000 \
-	-O3 --memory-init-file 0 \
-	--pre-js $(PRE_JS) \
+        -O3 --memory-init-file 0 \
 	-o $@
 
 ffmpeg-webm.js: $(FFMPEG_WEBM_BC) $(PRE_JS) $(POST_JS_SYNC)
@@ -325,3 +369,8 @@ ffmpeg-worker-mp4.js: $(FFMPEG_MP4_BC) $(PRE_JS) $(POST_JS_WORKER)
 	emcc $(FFMPEG_MP4_BC) $(MP4_SHARED_DEPS) \
 		--post-js $(POST_JS_WORKER) \
 		$(EMCC_COMMON_ARGS)
+
+ffmpeg-h264.js: build/ffmpeg-mp4/ffmpeg-h264.bc
+	emcc build/ffmpeg-mp4/ffmpeg-h264.bc \
+		-s EXPORTED_FUNCTIONS='["_avcodec_register_all","_avcodec_find_decoder_by_name","_avcodec_alloc_context3","_avcodec_open2", "_av_init_packet", "_avcodec_alloc_frame", "_av_packet_from_data", "_avcodec_decode_video2"]' \
+	        $(EMCC_COMMON_ARGS)
