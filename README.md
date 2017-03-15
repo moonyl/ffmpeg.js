@@ -14,6 +14,9 @@ Currently available builds (additional builds may be added in future):
 
 * `ffmpeg-h264.js` - Version allowing direct access to avcodec to play live H264 video stream. Other codecs can easily be added in the makefile
 
+Before building any of these target, install emscripten and don't forget to execute `source ./emsdk_env.sh` before calling `make`
+ 
+
 ## Version scheme
 
 ffmpeg.js uses the following version pattern: `major.minor.9ddd`, where:

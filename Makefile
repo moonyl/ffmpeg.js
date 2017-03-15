@@ -289,8 +289,13 @@ FFMPEG_H264_ARGS = \
 	\
         --disable-all \
         --disable-everything \
+        --enable-ffmpeg \
         --enable-avcodec \
+        --enable-avformat \
 	--enable-avutil \
+	--enable-swresample \
+	--enable-swscale \
+	--enable-avfilter \
 	--enable-decoder=h264 \
         --enable-shared
 
@@ -333,13 +338,13 @@ build/ffmpeg-mp4/ffmpeg.bc: $(MP4_SHARED_DEPS)
 build/ffmpeg-mp4/ffmpeg-h264.bc:
 	cd build/ffmpeg-mp4 && \
 	emconfigure ./configure $(FFMPEG_H264_ARGS) && \
-	emmake make -j8
+	emmake make -j8 && \
+	cp ffmpeg ffmpeg.bc
 
 # Compile bitcode to JavaScript.
 # NOTE(Kagami): Bump heap size to 64M, default 16M is not enough even
 # for simple tests and 32M tends to run slower than 64M.
 EMCC_COMMON_ARGS = \
-        --closure 1 \
         -s TOTAL_MEMORY=67108864 \
 	-s OUTLINING_LIMIT=20000 \
         -s NO_FILESYSTEM=1 \
@@ -369,10 +374,5 @@ ffmpeg-worker-mp4.js: $(FFMPEG_MP4_BC) $(PRE_JS) $(POST_JS_WORKER)
 
 ffmpeg-h264.js: build/ffmpeg-mp4/ffmpeg-h264.bc
 	emcc build/ffmpeg-mp4/ffmpeg.bc \
-		-s EXPORTED_FUNCTIONS='["_avcodec_register_all","_avcodec_find_decoder_by_name","_avcodec_alloc_context3","_avcodec_open2", "_av_init_packet", "_avcodec_alloc_frame", "_av_packet_from_data", "_avcodec_decode_video2", "_avcodec_flush_buffers"]' \
-	        $(EMCC_COMMON_ARGS)
-
-ffmpeg-h264-lib.js: build/ffmpeg-mp4/ffmpeg-h264.bc
-	emcc build/ffmpeg-mp4/libavutil/libavutil.a build/ffmpeg-mp4/libavcodec/libavcodec.a \
 		-s EXPORTED_FUNCTIONS='["_avcodec_register_all","_avcodec_find_decoder_by_name","_avcodec_alloc_context3","_avcodec_open2", "_av_init_packet", "_avcodec_alloc_frame", "_av_packet_from_data", "_avcodec_decode_video2", "_avcodec_flush_buffers"]' \
 	        $(EMCC_COMMON_ARGS)
