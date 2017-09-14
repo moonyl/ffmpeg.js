@@ -2,12 +2,16 @@
 # You need emsdk environment installed and activated, see:
 # <https://kripken.github.io/emscripten-site/docs/getting_started/downloads.html>.
 
-all:  h264
+H264_AVLIB_FUNCTIONS = "_avcodec_register_all","_avcodec_find_decoder_by_name","_avcodec_alloc_context3","_avcodec_open2", "_av_init_packet", "_av_frame_alloc", "_av_packet_from_data", "_avcodec_decode_video2", "_avcodec_flush_buffers"
+all:  h264 h264-debug
 h264: ffmpeg-h264.js
+h264-debug: ffmpeg-h264-debug.js
 
-clean: clean-js 
+clean: clean-js clean-ffmpeg
 clean-js:
-	rm -f -- ffmpeg*.js
+	rm -f -- ffmpeg*.js 
+clean-ffmpeg:
+	-cd build/FFmpeg && rm -f ffmpeg.bc && make clean
 
 FFMPEG_H264_ARGS = \
 	 --cc="emcc" \
@@ -74,12 +78,28 @@ EMCC_COMMON_ARGS = \
 		-s OUTLINING_LIMIT=20000 \
         -s NO_FILESYSTEM=1 \
         -s NO_EXIT_RUNTIME=1 \
-        -O3 --memory-init-file 0 \
-        --llvm-lto 3 --llvm-opts 3 \
-        --js-opts 1 \
 		-o $@
 
+EMCC_OP_ARGS = \
+	 -O3 --memory-init-file 0 \
+	 --llvm-lto 3 --llvm-opts 3 \
+	 --js-opts 1 
+	 
+EMCC_DEBUG_ARGS = \
+	-s USE_CLOSURE_COMPILER=0 \
+	-O0 --memory-init-file 0 \
+	--llvm-lto 0 --llvm-opts 0 \
+	--js-opts 0 \
+	--profiling \
+	-g4
+	
+	 
+ffmpeg-h264-debug.js: build/FFmpeg/ffmpeg-h264.bc
+	emcc build/FFmpeg/ffmpeg.bc \
+	-s EXPORTED_FUNCTIONS='[$(H264_AVLIB_FUNCTIONS)]' \
+	 $(EMCC_COMMON_ARGS) $(EMCC_DEBUG_ARGS)
+	 
 ffmpeg-h264.js: build/FFmpeg/ffmpeg-h264.bc
 	emcc build/FFmpeg/ffmpeg.bc \
-    -s EXPORTED_FUNCTIONS='["_avcodec_register_all","_avcodec_find_decoder_by_name","_avcodec_alloc_context3","_avcodec_open2", "_av_init_packet", "_av_frame_alloc", "_av_packet_from_data", "_avcodec_decode_video2", "_avcodec_flush_buffers"]' \
-	 $(EMCC_COMMON_ARGS)
+    -s EXPORTED_FUNCTIONS='[$(H264_AVLIB_FUNCTIONS)]' \
+	 $(EMCC_COMMON_ARGS) $(EMCC_OP_ARGS)
