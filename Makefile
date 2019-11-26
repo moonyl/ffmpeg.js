@@ -345,7 +345,7 @@ build/ffmpeg-mp4/ffmpeg-h264.bc:
 # NOTE(Kagami): Bump heap size to 64M, default 16M is not enough even
 # for simple tests and 32M tends to run slower than 64M.
 EMCC_COMMON_ARGS = \
-        -s TOTAL_MEMORY=67108864 \
+        -s TOTAL_MEMORY=160MB \
 	-s OUTLINING_LIMIT=20000 \
         -s NO_FILESYSTEM=1 \
         -s NO_EXIT_RUNTIME=1 \
