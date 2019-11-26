@@ -9,5 +9,7 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
-    - name: emscripten configure
+    - name: check current
+      run: ls
+    - name: emscripten make
       run: docker run --rm -v $(pwd):$(pwd) -u $(id -u):$(id -g) trzeci/emscripten:sdk-tag-1.37.6-64bit ls
